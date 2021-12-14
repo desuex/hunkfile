@@ -3,20 +3,20 @@ import re
 regex = r"(?:<Hash=0x)([0-9a-fA-F]+)(?:>\t)([\w\W]+?(?=\Z|<Hash))"
 encoded = u"AßBÚÀEËÐÃÄÅKÑMHOÒPCTÈØXŒÖÕÁÂÝÏÔÛÜÿõùýðeëéâáôóòàãèöpcåyøxñçüæïœîäþê"
 decoded = u"АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя"
-with open("strdmp.txt", 'r') as fp:
+with open("Dialog.csv", 'r') as fp:
     data = fp.read()
 for i in range(0, 66):
     data = data.replace(decoded[i], encoded[i])
 matches = re.finditer(regex, data, re.MULTILINE)
 matches_list = list(matches)
 matches_cnt = len(matches_list)
-print(matches_list[0][2])
+# print(matches_list[0][2])
 # print(0x01000000)
 # for matchNum, match in enumerate(matches, start=1):
 # print(match.groups())
 sig = [0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00]
 pointer_base = matches_cnt * 8 + 0x1C
-with open('str', 'wb') as fp:
+with open('Dialog.bin', 'wb') as fp:
     fp.write(bytearray(sig))
     fp.write(matches_cnt.to_bytes(4, byteorder='little', signed=False))  # records count
     fp.write((0x1C).to_bytes(4, byteorder='little', signed=False))  # pointers loc

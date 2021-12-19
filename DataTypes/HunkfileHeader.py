@@ -17,7 +17,7 @@ class HunkfileHeaderRow(NamedTuple):
     quad: Quad
 
     def pack(self) -> bytes:
-        padded = bytes(self.name.encode('ascii')) + bytearray(64 - len(self.name))
+        padded = bytes(self.name.encode('utf-8')) + bytearray(64 - len(self.name))
         return padded + self.quad.pack()
 
 

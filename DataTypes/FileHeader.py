@@ -13,5 +13,5 @@ class FileHeader(NamedTuple):
 
     def pack(self) -> bytes:
         h = struct.pack('hhhhh', self.mystery0, self.data_type, self.parts, len(self.folder)+1, len(self.filename)+1)
-        full = h + bytes(self.folder.encode('ascii')) + b'\x00' + bytes(self.filename.encode('ascii')) + b'\x00'
+        full = h + bytes(self.folder.encode('utf-8')) + b'\x00' + bytes(self.filename.encode('utf-8')) + b'\x00'
         return struct.pack("ii", len(full), 0x040071) + full

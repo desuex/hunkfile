@@ -3,7 +3,7 @@ import re
 regex = r"(?:<Hash=0x)([0-9a-fA-F]+)(?:>\t)([\w\W]+?(?=\Z|<Hash))"
 encoded = u"AßBÚÀEËÐÃÄÅKÑMHOÒPCTÈØXŒÖÕÁÂÝÏÔÛÜÿõùýðeëéâáôóòàãèöpcåyøxñçüæïœîäþê"
 decoded = u"АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя"
-with open("Dialog.csv", 'r') as fp:
+with open("Dialog.txt", 'r') as fp:
     data = fp.read()
 for i in range(0, 66):
     data = data.replace(decoded[i], encoded[i])

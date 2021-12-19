@@ -163,7 +163,7 @@ class HunkfileCodec:
         for i in range(0, 8):
             ifrom = 16 + (64 + 8) * i
             ito = 16 + (64 + 8) * i + 64
-            val = data[ifrom:ito].decode('ascii').rstrip('\x00')
+            val = data[ifrom:ito].decode('utf-8').rstrip('\x00')
 
             extra = struct.unpack('hhhh', data[ito:ito + 8])
             yield HunkfileHeaderRow(val, Quad(*extra))
@@ -172,27 +172,49 @@ class HunkfileCodec:
         values = struct.unpack('hhhhh', data[0:10])
         folder = data[10:10 + values[3]][:-1]
         filename = data[10 + values[3]:10 + values[3] + values[4]][:-1]
-        return FileHeader(*values, folder.decode('ascii'), filename.decode('ascii'))
+        return FileHeader(*values, folder.decode('utf-8'), filename.decode('utf-8'))
 
     def parse_abstract_hash(self, data):
-        hashes = struct.unpack("B"*(len(data)),data)
+        hashes = struct.unpack("B" * (len(data)), data)
         return AbstractHash(list(hashes))
 
     def parse_empty(self, data):
         return Empty(data)
 
-    def parse_stringtable(self, data):
+    def parse_stringtable_alt(self, data, size):
         values = struct.unpack('IIIIIII', data[0:28])
-        strings = self.parse_strings(data, values[2], values[4])
-        return StringTable(*values, list(strings))
+        offsets = struct.unpack('I' * values[2], data[values[3]:values[4]])
+        hashes = struct.unpack('I' * values[2], data[values[4]:(values[4] + 4 * values[2])])
+        rows = self.parse_rows_alt(data, offsets, hashes)
+        return StringTable(*values,size, list(rows))
 
-    def parse_strings(self, data, total, hash_offset):
-        for i in range(0, total):
-            ifrom = 28 + i * 4
-            offset = struct.unpack('I', data[ifrom:ifrom + 4])[0]
-            hash = struct.unpack('I', data[hash_offset - 28 + ifrom:hash_offset - 28 + ifrom + 4])[0]
-            str = data[offset:].decode("UTF-8").split('\x00', 1)[0]
-            yield StringTableRow(offset, hash, str)
+    def parse_rows_alt(self, data, offsets, hashes):
+        for i in range(0, len(offsets)):
+            offset = offsets[i]
+            hash = hashes[i]
+            s = 0
+            single_str = bytes()
+            while True:
+                c = data[offset + s]
+
+                if c == 0:
+                    break
+                single_str += c.to_bytes(1, "little")
+                s += 1
+            yield StringTableRow(i, offset, hash, single_str)
+    #
+    # def parse_stringtable(self, data):
+    #     values = struct.unpack('IIIIIII', data[0:28])
+    #     strings = self.parse_strings(data, values[2], values[4])
+    #     return StringTable(*values, list(strings))
+    #
+    # def parse_strings(self, data, total, hash_offset):
+    #     for i in range(0, total):
+    #         ifrom = 28 + i * 4
+    #         offset = struct.unpack('I', data[ifrom:ifrom + 4])[0]
+    #         hash = struct.unpack('I', data[hash_offset - 28 + ifrom:hash_offset - 28 + ifrom + 4])[0]
+    #         str = data[offset:].decode("UTF-8").split('\x00', 1)[0]
+    #         yield StringTableRow(offset, hash, str)
 
     def parse_record(self, record_size, record_type, data: str):
         match record_type:
@@ -208,7 +230,7 @@ class HunkfileCodec:
                 h = self.parse_abstract_hash(data)
                 return h
             case 0x4100F:
-                return self.parse_stringtable(data)
+                return self.parse_stringtable_alt(data, record_size)
 
             # case 0x45100:
             #     print("ClankBodyTemplate main")
@@ -292,7 +314,8 @@ class HunkfileCodec:
 
     def parse_and_store(self, filename):
         with open(filename + '.pickle', 'wb') as f:
-            pickle.dump(list(self.parse_single_file(self.basedir + filename)), f)
+            data = list(self.parse_single_file(self.basedir + filename))
+            pickle.dump(data, f)
 
     def load_stored(self, filename):
         """
@@ -311,6 +334,6 @@ class HunkfileCodec:
 
 
 codec = HunkfileCodec("C:\S\steamapps\common\Monster High New Ghoul in School\HUNKFILES\\")
-codec.parse_and_store("Localisation_en_US.hnk.bak")
-d = codec.load_stored("Localisation_en_US.hnk.bak")
-codec.pack(d, "Localisation_en_US2.hnk")
+codec.parse_and_store("Localisation_en_US5.hnk")
+d = codec.load_stored("Localisation_en_US5.hnk")
+codec.pack(d, "Localisation_en_US5.hnk")

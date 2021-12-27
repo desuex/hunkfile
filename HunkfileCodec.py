@@ -1,5 +1,8 @@
+import re
 import struct
 import pickle
+
+from xlrd import open_workbook
 
 from DataTypes.AbstractHash import AbstractHash
 from DataTypes.Empty import Empty
@@ -186,7 +189,7 @@ class HunkfileCodec:
         offsets = struct.unpack('I' * values[2], data[values[3]:values[4]])
         hashes = struct.unpack('I' * values[2], data[values[4]:(values[4] + 4 * values[2])])
         rows = self.parse_rows_alt(data, offsets, hashes)
-        return StringTable(*values,size, list(rows))
+        return StringTable(*values, size, list(rows))
 
     def parse_rows_alt(self, data, offsets, hashes):
         for i in range(0, len(offsets)):
@@ -202,19 +205,6 @@ class HunkfileCodec:
                 single_str += c.to_bytes(1, "little")
                 s += 1
             yield StringTableRow(i, offset, hash, single_str)
-    #
-    # def parse_stringtable(self, data):
-    #     values = struct.unpack('IIIIIII', data[0:28])
-    #     strings = self.parse_strings(data, values[2], values[4])
-    #     return StringTable(*values, list(strings))
-    #
-    # def parse_strings(self, data, total, hash_offset):
-    #     for i in range(0, total):
-    #         ifrom = 28 + i * 4
-    #         offset = struct.unpack('I', data[ifrom:ifrom + 4])[0]
-    #         hash = struct.unpack('I', data[hash_offset - 28 + ifrom:hash_offset - 28 + ifrom + 4])[0]
-    #         str = data[offset:].decode("UTF-8").split('\x00', 1)[0]
-    #         yield StringTableRow(offset, hash, str)
 
     def parse_record(self, record_size, record_type, data: str):
         match record_type:
@@ -310,11 +300,15 @@ class HunkfileCodec:
             case _:
                 # print("Record of current type doesn't have an implemented parser")
                 # return data
-                raise ValueError("Record of current type doesn't have an implemented parser")
+                return self.parse_empty(data)
+                # raise ValueError("Record of current type doesn't have an implemented parser")
+
+    def parse(self, filename):
+        return list(self.parse_single_file(self.basedir + filename))
 
     def parse_and_store(self, filename):
         with open(filename + '.pickle', 'wb') as f:
-            data = list(self.parse_single_file(self.basedir + filename))
+            data = self.parse(filename)
             pickle.dump(data, f)
 
     def load_stored(self, filename):
@@ -332,8 +326,107 @@ class HunkfileCodec:
             for row in data:
                 fp.write(row.pack())
 
+    def encode_cyrillic(self, cyr) -> bytes:
+        # encoded = u"AßBÚÀEËÐÃÄÅKÑMHOÒPCTÈØXŒÖÕÁÂÝÏÔÛÜÿõùýðeëéâáôóòàãèöpcåyøxñçüæïœîäþê"
+        encoded = u"AßBÚÀEËÐÃÄÅKÑMHOÒPCTÈØXŒÖÕÁÂÝÏÔÛÜÿõùýðeëéâáôóòàãèöpcåyøxñçüæïœîäþê"
+        decoded = u"АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+        # encoded = u"A6BrDEEW3NNKnMHOnPCTYFXu4wWbibEURa6Brdeew3uuknMHonpctyfxu4wwbibeuR"
+        for i in range(0, 66):
+            cyr = cyr.replace(decoded[i], encoded[i])
+        # return bytearray(cyr)
+        return cyr.encode("ANSI")
+
+    def hex2int(self, hex: str) -> int:
+        if hex[1] == "x":
+            return int(hex, 0)
+        return int(hex, 16)
+
+    def open_csv(self, filename):
+        with open(filename, 'r', newline='\n') as csvfile:
+            test_str = csvfile.read()
+            regex = r"([0-9A-F]+)(?:\t)(?:(?:\")([^\"]+)(?:[\"]{1}))*"
+            matches = re.finditer(regex, test_str, re.MULTILINE)
+
+            for matchNum, match in enumerate(matches, start=1):
+                yield match.groups()
+
+    def build_stringtable(self, sheet):
+        total = len(sheet)
+        base_offset = (total * 8) + 28
+        current_offset = base_offset
+        next_id = 0
+        next_offset = current_offset
+        for line in sheet:
+            id = next_id
+            current_offset = next_offset
+
+            h = codec.hex2int(line[0])
+            # t = line[1]
+            t = codec.encode_cyrillic(line[1])
+            print("Hash: " + hex(h))
+            print("String: " + t.decode("UTF-8"))
+            print("Offset: " + str(current_offset))
+            if len(t) < 1:
+                raise ValueError("Empty string on hash " + hex(h))
+            next_id += 1
+            next_offset += len(t) + 1
+            yield StringTableRow(id, current_offset, h, t)
+
+    def dump_loca(self, hunkfile):
+        data = self.parse(hunkfile)
+        print(data[2].export_excel("Common.xls"))
+        print(data[6].export_excel("Dialog.xls"))
+        print(data[10].export_excel("lcCommon.xls"))
+        print(data[14].export_excel("lcPc.xls"))
+
+    def dump_global_en(self, hunkfile):
+        data = self.parse(hunkfile)
+        print(data[2].export_excel("Credits.xls"))
+        print(data[6].export_excel("lcCommon_global_en.xls"))
+        print(data[10].export_excel("lcPc_global_en.xls"))
+
+    def build_excel_rows(self, sheet):
+        base_offset = sheet.nrows * 8 + 28
+        next_offset = base_offset
+        for i in range(0, sheet.nrows):
+            offset = next_offset
+            # print(int(sheet.cell_value(i, 2)))
+            # print(hex(int(sheet.cell_value(i, 2))))
+            encoded_str = self.encode_cyrillic(str(sheet.cell_value(i, 6)))
+            next_offset += len(encoded_str)+1
+            yield StringTableRow(int(sheet.cell_value(i, 0)), offset, int(sheet.cell_value(i, 2)),
+                                 encoded_str)
+                                 # str(sheet.cell_value(i, 4)).encode("utf-8"))
+    def build_excel_rows_rus(self, sheet):
+        for i in range(0, sheet.nrows):
+            yield StringTableRow(int(sheet.cell_value(i, 0)), int(sheet.cell_value(i, 1)), int(sheet.cell_value(i, 2)),
+                                 self.encode_cyrillic(str(sheet.cell_value(i, 6)))+b'\0')
+
+    def import_excel(self, filename):
+
+        wb = open_workbook(filename)
+        sheet = wb.sheet_by_index(0)
+        rows = list(self.build_excel_rows(sheet))
+        return StringTable(1, 2, sheet.nrows, 28, sheet.nrows * 4 + 28, 0, 178778297, 0, rows)
+
 
 codec = HunkfileCodec("C:\S\steamapps\common\Monster High New Ghoul in School\HUNKFILES\\")
-codec.parse_and_store("Localisation_en_US5.hnk")
-d = codec.load_stored("Localisation_en_US5.hnk")
-codec.pack(d, "Localisation_en_US5.hnk")
+data = codec.parse("locaclean.hnk")
+# data = codec.parse("Global_en_US.hnk")
+res = codec.import_excel("Localisation.xls")
+# codec.dump_global_en("Global_en_US.hnk")
+# codec.dump_loca("locaclean.hnk")
+
+# sheet = list(codec.open_csv("dia3.csv"))
+# data = codec.parse("Localisation_en_US5.hnk")
+#
+# dialog = data[6]
+# print(res)
+# total = len(sheet)
+# print("Total lines: " + str(total))
+# b = list(codec.build_stringtable(sheet))
+#
+#
+data[6] = res
+#
+codec.pack(data, "C:\S\steamapps\common\Monster High New Ghoul in School\HUNKFILES\Localisation_en_US_test.hnk")

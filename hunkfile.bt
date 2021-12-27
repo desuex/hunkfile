@@ -1,0 +1,363 @@
+//------------------------------------------------
+//--- 010 Editor v12.0 Binary Template
+//
+//      File: hunkfile.bt
+//   Authors: desuex
+//   Version: 1.0
+//   Purpose: Torus Games HUNKFILES hnk archives
+//  Category: Game
+// File Mask: *.hnk
+//  ID Bytes: 50 02 00 00 70 00 04 00
+//   History:
+//------------------------------------------------
+LittleEndian();
+long headerSize <format=decimal, hidden=false>;
+int mysteryNum0 <format=hex, hidden=false>;
+
+struct HEADER {
+
+
+    byte shit0[16] <format=hex>;
+    string scope0;
+    //long filler[14] <format=decimal>;
+    char zeros[64-sizeof(scope0)];
+    byte shit[8];
+    string scope1;
+    char zeros2[64-sizeof(scope1)];
+    byte shit2[8];
+    string scope2;
+    char zeros3[64-sizeof(scope2)];
+    byte shit3[8];
+    string scope3;
+    char zeros4[64-sizeof(scope3)];
+    byte shit4[8];
+    string scope4;
+    char zeros5[64-sizeof(scope4)];
+    byte shit5[8];
+    string scope5;
+    char zeros6[64-sizeof(scope5)];
+    byte shit6[8];
+    string scope6;
+    char zeros7[64-sizeof(scope6)];
+    byte shit7[8];
+    string scope7;
+    char zeros8[64-sizeof(scope7)];
+    byte shit8[8];
+    //short scope8;
+
+
+
+} headerInfo <bgcolor=cLtBlue, format=decimal>;
+
+struct FILEHEADER {
+    short  x2;
+    short dataType;
+    short parts;
+    short folder_len;
+    short filename_len;
+    char folder[folder_len];
+    char filename[filename_len];
+
+    //byte terminator;
+};
+struct BYTES {
+            long size <format=decimal>;
+            int mysteryNum2 <format=hex>;
+            byte data[size];
+} ;
+ typedef struct {
+        int   offset;
+        string str;
+    } SingleString;
+string ReadStr(int pos) {
+    local int offset =ReadInt(pos);
+    local int64 curPos = FTell();
+    FSeek(pos+offset);
+
+}
+struct StringContainer{
+    string   str;
+};
+
+//STRINGTABLE STUFF
+
+
+
+struct DATABLOCK(int id) {
+    local int ID = id;
+    unsigned int32 offset <fgcolor=0xFFDFFF>;
+};
+struct REC(int id, int hashHome, int64 fileOffset) {
+    local int ID = id;
+    DATABLOCK db(id)  <name=NameDBEntity>;
+    if(db.offset) {
+        FSeek(db.offset+fileOffset);
+    }
+    string val <fgcolor=0xFF3FFF>;
+    if(hashHome) {
+        FSeek(fileOffset+hashHome+4*id);
+    }
+    int32 hash <format=hex>;
+
+};
+
+// Custom read function
+string NameDB( REC &r)
+{
+    if(!r.hash) return "";
+    local string hashstr;
+    SPrintf(hashstr, "<Hash=0x%X>", r.hash );
+
+    if(sizeof(r.val)>0 && (r.val[0]>=20 || r.val[0] <= -30))
+        local string fullstr;
+        SPrintf(fullstr, "%s %s\n", hashstr,r.val);
+        return fullstr;
+    return hashstr;
+}
+
+int RecSize( REC &r){
+    if(!r.val) return 0;
+        return sizeof(r.val);
+}
+// Custom read function
+string NameDBEntity( DATABLOCK &d)
+{
+    local string s;
+    SPrintf(s, "ID='%d'\n", d.ID );;
+    return s;
+}
+
+
+
+
+
+
+
+
+
+
+struct StringTable {
+    long size <format=decimal>;
+    int mysteryNum2 <format=hex>;
+    local int64 fileOffset = FTell();
+    int64 sig  <format=hex>;
+    if(sig == 0x200000001) {
+        int records;
+        int offset_start;
+        int hashHome;
+        if(FEof()) return;
+        int zeros;
+        int hash <format=hex>;
+        local int64 pos;
+        local int k;
+        for (k=0;k<records;k++) {
+            pos = FTell();
+            Printf( "pos  = %d\n", pos );
+            REC rec(k,hashHome,fileOffset) <name=NameDB, optimize=false, fgcolor=0xFFAFFF>;
+            pos+=4;
+            FSeek(pos);
+        }
+
+    }
+
+    FSeek(fileOffset+size);
+
+};
+
+struct TSEStringTable(FILEHEADER &fh) {
+    local int i;
+    for ( i = 0; i<fh.parts; i++) {
+        StringTable n;
+
+    }
+
+};
+
+struct TSETexture(FILEHEADER &fh) {
+    local int i;
+    for ( i = 0; i<fh.parts; i++) {
+        BYTES n;
+
+    }
+
+};
+
+struct TSEFontDescriptor(FILEHEADER &fh) {
+    local int i;
+    for ( i = 0; i<fh.parts; i++) {
+        BYTES n;
+
+    }
+
+};
+
+
+struct SqueakStream(FILEHEADER &fh) {
+    local int i;
+    for ( i = 0; i<fh.parts; i++) {
+        BYTES n;
+
+    }
+};
+struct Animation(FILEHEADER &fh) {
+    local int i;
+    for ( i = 0; i<fh.parts; i++) {
+        BYTES n;
+
+    }
+};
+struct RenderModelTemplate(FILEHEADER &fh) {
+
+    local int i;
+    for ( i = 0; i<fh.parts; i++) {
+        BYTES n;
+
+    }
+
+};
+
+struct RenderSprite(FILEHEADER &fh) {
+    local int i;
+    for ( i = 0; i<fh.parts; i++) {
+        BYTES n;
+
+    }
+};
+
+
+
+struct LiteScript(FILEHEADER &fh) {
+    local int i;
+    for ( i = 0; i<fh.parts; i++) {
+        BYTES n;
+
+    }
+};
+struct TSEDataTable(FILEHEADER &fh) {
+    local int i;
+    for ( i = 0; i<fh.parts; i++) {
+        BYTES n;
+
+    }
+};
+
+struct StateFlowTemplate(FILEHEADER &fh) {
+    local int i;
+    for ( i = 0; i<fh.parts; i++) {
+        BYTES n;
+
+    }
+};
+struct SqueakSample(FILEHEADER &fh) {
+    local int i;
+    for ( i = 0; i<fh.parts; i++) {
+        BYTES n;
+
+    }
+};
+struct ClankBodyTemplate(FILEHEADER &fh) {
+    local int i;
+    for ( i = 0; i<fh.parts; i++) {
+        BYTES n;
+
+    }
+};
+struct VertexShader(FILEHEADER &fh) {
+    local int i;
+    for ( i = 0; i<fh.parts; i++) {
+        BYTES n;
+
+    }
+};
+struct ShaderProgram(FILEHEADER &fh) {
+    local int i;
+    for ( i = 0; i<fh.parts; i++) {
+        BYTES n;
+
+    }
+};
+struct EntityTemplate(FILEHEADER &fh) {
+    local int i;
+    for ( i = 0; i<fh.parts; i++) {
+        BYTES n;
+
+    }
+};
+
+struct Unk(FILEHEADER &fh) {
+    local int i;
+    for ( i = 0; i<fh.parts; i++) {
+        BYTES n;
+
+    }
+};
+
+
+
+while (true)
+{
+    if(FEof()) break;
+    int size <hidden=false>;
+    int mysteryNum1 <format=hex, hidden=false>;
+    if(FEof()) break;
+    if (size == 0) continue;
+    FILEHEADER fh1 ;
+
+    switch( fh1.dataType )
+    {
+        case 0: VertexShader vs(fh1)<bgcolor=0x332211>;break;
+        case 1: ShaderProgram vs(fh1)<bgcolor=0x112233>;break;
+        case 2: TSEDataTable dt(fh1)<bgcolor=0xCCCCCC>;break;
+        case 3  : RenderSprite spr(fh1) <bgcolor=0x0000CC>; break;
+        case 4  : TSEStringTable str(fh1)<bgcolor=0xEEEEEE>; break;
+        case 5 : TSEFontDescriptor desc(fh1) <bgcolor=0xFFFF00>;break;
+        case 6  : EntityTemplate et(fh1) <bgcolor=0xFF99FF>; break;
+        case 8 : ClankBodyTemplate clsnk(fh1); break;
+        case 9:
+        case 10  : LiteScript anim(fh1) <bgcolor=0x333333>; break;
+        case 11  : SqueakSample anim(fh1)  <bgcolor=0x009900>; break;
+        case 13  : TSETexture tex(fh1)  <bgcolor=0xCC00CC>; break;
+        case 14  : RenderModelTemplate rmt(fh1) <bgcolor=0xCC0044>; break;
+        case 15  : RenderModelTemplate rmt(fh1) <bgcolor=0xCC0044>; break;
+        case 17 : SqueakStream strm(fh1) <bgcolor=0x00CC00>; break;
+        case 18 : StateFlowTemplate sfm(fh1);break;
+        default : Unk unk();
+    }
+
+}
+
+
+/*
+struct FILEHEADER_DATA {
+    int size;
+    short x2_1;
+    short x2_2;
+    short x3_1;
+    short x3_2;
+    short x4;
+    short folder_len;
+    short filename_len;
+    char folder[folder_len];
+    char filename[filename_len];
+    //byte data[size+sizeof(size)];
+} fh1 <bgcolor=cLtRed>;
+
+struct INTERM {
+    int size;
+    byte data[size];
+}interm <bgcolor=cLtGreen>;
+
+struct FILEHEADER2 {
+    int size;
+    short x2_1;
+    short x2_2;
+    short x3_1;
+    short x3_2;
+    short x4;
+    short folder_len;
+    short filename_len;
+    string folder;
+    string filename;
+    //byte terminator;
+} fh2 <bgcolor=cLtPurple>;
+*/

@@ -14,11 +14,12 @@ class Quad(NamedTuple):
 
 class HunkfileHeaderRow(NamedTuple):
     name: str
-    quad: Quad
+    maxsize: int
+    type:int
 
     def pack(self) -> bytes:
         padded = bytes(self.name.encode('utf-8')) + bytearray(64 - len(self.name))
-        return padded + self.quad.pack()
+        return padded + struct.pack('ll', self.maxsize*2, self.type) #localization compatibility hack, remove maxsize multiplier to keep size
 
 
 class HunkfileHeader(NamedTuple):
@@ -30,14 +31,14 @@ class HunkfileHeader(NamedTuple):
     mystery5: int
     mystery6: int
     mystery7: int
-    q0: Quad
-    q1: Quad
-    q2: Quad
-    q3: Quad
-    q4: Quad
-    q5: Quad
-    q6: Quad
-    q7: Quad
+    q0: HunkfileHeaderRow
+    q1: HunkfileHeaderRow
+    q2: HunkfileHeaderRow
+    q3: HunkfileHeaderRow
+    q4: HunkfileHeaderRow
+    q5: HunkfileHeaderRow
+    q6: HunkfileHeaderRow
+    q7: HunkfileHeaderRow
 
     def pack(self) -> bytes:
         mystery_data = struct.pack('hhhhhhhh', self.mystery0, self.mystery1, self.mystery2, self.mystery3,

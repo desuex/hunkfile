@@ -168,8 +168,8 @@ class HunkfileCodec:
             ito = 16 + (64 + 8) * i + 64
             val = data[ifrom:ito].decode('utf-8').rstrip('\x00')
 
-            extra = struct.unpack('hhhh', data[ito:ito + 8])
-            yield HunkfileHeaderRow(val, Quad(*extra))
+            maxsize,type = struct.unpack('ll', data[ito:ito + 8])
+            yield HunkfileHeaderRow(val, maxsize,type)
 
     def parse_filename_header(self, data):
         values = struct.unpack('hhhhh', data[0:10])
@@ -402,10 +402,10 @@ class HunkfileCodec:
             yield StringTableRow(int(sheet.cell_value(i, 0)), int(sheet.cell_value(i, 1)), int(sheet.cell_value(i, 2)),
                                  self.encode_cyrillic(str(sheet.cell_value(i, 6)))+b'\0')
 
-    def import_excel(self, filename):
+    def import_excel(self, filename, sheet_id):
 
         wb = open_workbook(filename)
-        sheet = wb.sheet_by_index(0)
+        sheet = wb.sheet_by_index(sheet_id)
         rows = list(self.build_excel_rows(sheet))
         return StringTable(1, 2, sheet.nrows, 28, sheet.nrows * 4 + 28, 0, 178778297, 0, rows)
 
@@ -413,7 +413,10 @@ class HunkfileCodec:
 codec = HunkfileCodec("C:\S\steamapps\common\Monster High New Ghoul in School\HUNKFILES\\")
 data = codec.parse("locaclean.hnk")
 # data = codec.parse("Global_en_US.hnk")
-res = codec.import_excel("Localisation.xls")
+dialog = codec.import_excel("Localisation.xls",0) #dialog
+common = codec.import_excel("Localisation.xls",1) #common
+lc_pc = codec.import_excel("Localisation.xls",2) #lcPC
+lc_common = codec.import_excel("Localisation.xls",3) #lcCommon
 # codec.dump_global_en("Global_en_US.hnk")
 # codec.dump_loca("locaclean.hnk")
 
@@ -427,6 +430,9 @@ res = codec.import_excel("Localisation.xls")
 # b = list(codec.build_stringtable(sheet))
 #
 #
-data[6] = res
+data[2] = common
+data[6] = dialog
+data[10] = lc_common
+data[14] = lc_pc
 #
 codec.pack(data, "C:\S\steamapps\common\Monster High New Ghoul in School\HUNKFILES\Localisation_en_US_test.hnk")

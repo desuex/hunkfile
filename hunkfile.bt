@@ -163,6 +163,53 @@ struct StringTable {
     FSeek(fileOffset+size);
 
 };
+struct FontDescriptor {
+    long size <format=decimal>;
+    int mysteryNum2 <format=hex>;
+    local int64 fileOffset = FTell();
+    struct FontDescriptorHeader{
+    short z;
+    ushort q1;
+    short horizontal;
+    ushort q3;
+    short vertical;//vertical shift
+     
+    ushort cnt1;
+    ushort cnt2;
+    ushort z1;
+    byte signature[8] <bgcolor=cLtBlue>;
+    ushort offset1;
+    ushort z2;
+    ushort z3;
+    ushort z4;
+    ushort offset2;
+    ushort z5;
+    } h <bgcolor=cLtBlue>;
+    
+    struct Row {
+        byte b[8];
+    };
+    struct Extra {
+        byte b[8];
+    };
+    struct Tuple {
+        ushort char_id;
+        ushort zero;
+    };
+    FSeek(fileOffset+h.signature[4]);
+    local int i;
+    for(i=0; i<h.cnt1; i++){
+        Row r <bgcolor=0xFFAFFF>;
+    }
+    for(i=0; i<h.cnt2; i++){
+        Extra e <bgcolor=0xFF44FF>;
+    }
+    for(i=0; i<h.cnt1; i++){
+        Tuple x <bgcolor=0xFF00FF>;
+    }
+    FSeek(fileOffset+size);
+
+};
 
 struct TSEStringTable(FILEHEADER &fh) {
     local int i;
@@ -185,7 +232,7 @@ struct TSETexture(FILEHEADER &fh) {
 struct TSEFontDescriptor(FILEHEADER &fh) {
     local int i;
     for ( i = 0; i<fh.parts; i++) {
-        BYTES n;
+        FontDescriptor n;
 
     }
 

@@ -3,7 +3,7 @@
 //
 //      File: hunkfile.bt
 //   Authors: desuex
-//   Version: 1.0
+//   Version: 1.0.1
 //   Purpose: Torus Games HUNKFILES hnk archives
 //  Category: Game
 // File Mask: *.hnk
@@ -16,33 +16,32 @@ int mysteryNum0 <format=hex, hidden=false>;
 
 struct HEADER {
 
-
-    byte shit0[16] <format=hex>;
+    byte unknown0[16] <format=hex>;
     string scope0;
     //long filler[14] <format=decimal>;
     char zeros[64-sizeof(scope0)];
-    byte shit[8];
+    byte unknown[8];
     string scope1;
     char zeros2[64-sizeof(scope1)];
-    byte shit2[8];
+    byte unknown2[8];
     string scope2;
     char zeros3[64-sizeof(scope2)];
-    byte shit3[8];
+    byte unknown3[8];
     string scope3;
     char zeros4[64-sizeof(scope3)];
-    byte shit4[8];
+    byte unknown4[8];
     string scope4;
     char zeros5[64-sizeof(scope4)];
-    byte shit5[8];
+    byte unknown5[8];
     string scope5;
     char zeros6[64-sizeof(scope5)];
-    byte shit6[8];
+    byte unknown6[8];
     string scope6;
     char zeros7[64-sizeof(scope6)];
-    byte shit7[8];
+    byte unknown7[8];
     string scope7;
     char zeros8[64-sizeof(scope7)];
-    byte shit8[8];
+    byte unknown8[8];
     //short scope8;
 
 

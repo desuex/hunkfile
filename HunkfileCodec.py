@@ -13,10 +13,12 @@ from DataTypes.StringTable import StringTable, StringTableRow
 
 
 class HunkfileCodec:
-    basedir: str
+    hnkdir: str
+    xlsdir: str
 
-    def __init__(self, basedir):
-        self.basedir = basedir
+    def __init__(self, hnkdir, xlsdir):
+        self.hnkdir = hnkdir
+        self.xlsdir = xlsdir
 
     def read_hunkfile(self, filename):
         with open(filename, 'rb') as fp:
@@ -168,8 +170,8 @@ class HunkfileCodec:
             ito = 16 + (64 + 8) * i + 64
             val = data[ifrom:ito].decode('utf-8').rstrip('\x00')
 
-            maxsize,type = struct.unpack('ll', data[ito:ito + 8])
-            yield HunkfileHeaderRow(val, maxsize,type)
+            maxsize, type = struct.unpack('ii', data[ito:ito + 8])
+            yield HunkfileHeaderRow(val, maxsize, type)
 
     def parse_filename_header(self, data):
         values = struct.unpack('hhhhh', data[0:10])
@@ -304,7 +306,7 @@ class HunkfileCodec:
                 # raise ValueError("Record of current type doesn't have an implemented parser")
 
     def parse(self, filename):
-        return list(self.parse_single_file(self.basedir + filename))
+        return list(self.parse_single_file(self.hnkdir + filename))
 
     def parse_and_store(self, filename):
         with open(filename + '.pickle', 'wb') as f:
@@ -321,7 +323,7 @@ class HunkfileCodec:
             return pickle.load(f)
 
     def pack(self, data, filename):
-        with open(filename, 'wb') as fp:
+        with open(self.hnkdir + filename, 'wb') as fp:
             row: Serializable
             for row in data:
                 fp.write(row.pack())
@@ -360,9 +362,9 @@ class HunkfileCodec:
             id = next_id
             current_offset = next_offset
 
-            h = codec.hex2int(line[0])
-            # t = line[1]
-            t = codec.encode_cyrillic(line[1])
+            h = self.hex2int(line[0])
+            t = line[1]
+            # t = self.encode_cyrillic(line[1])
             print("Hash: " + hex(h))
             print("String: " + t.decode("UTF-8"))
             print("Offset: " + str(current_offset))
@@ -374,16 +376,16 @@ class HunkfileCodec:
 
     def dump_loca(self, hunkfile):
         data = self.parse(hunkfile)
-        print(data[2].export_excel("Common.xls"))
-        print(data[6].export_excel("Dialog.xls"))
-        print(data[10].export_excel("lcCommon.xls"))
-        print(data[14].export_excel("lcPc.xls"))
+        print(data[2].export_excel(self.xlsdir + "Common.xls"))
+        print(data[6].export_excel(self.xlsdir + "Dialog.xls"))
+        print(data[10].export_excel(self.xlsdir + "lcCommon.xls"))
+        print(data[14].export_excel(self.xlsdir + "lcPc.xls"))
 
     def dump_global_en(self, hunkfile):
         data = self.parse(hunkfile)
-        print(data[2].export_excel("Credits.xls"))
-        print(data[6].export_excel("lcCommon_global_en.xls"))
-        print(data[10].export_excel("lcPc_global_en.xls"))
+        print(data[2].export_excel(self.xlsdir + "Credits.xls"))
+        print(data[6].export_excel(self.xlsdir + "lcCommon_global_en.xls"))
+        print(data[10].export_excel(self.xlsdir + "lcPc_global_en.xls"))
 
     def build_excel_rows(self, sheet):
         base_offset = sheet.nrows * 8 + 28
@@ -392,11 +394,11 @@ class HunkfileCodec:
             offset = next_offset
             # print(int(sheet.cell_value(i, 2)))
             # print(hex(int(sheet.cell_value(i, 2))))
-            encoded_str = self.encode_cyrillic(str(sheet.cell_value(i, 6)))
-            next_offset += len(encoded_str)+1
+            # encoded_str = str(sheet.cell_value(i, 6));
+            # encoded_str = self.encode_cyrillic(str(sheet.cell_value(i, 6))) # You probably don't need cyrillization
+            next_offset += len(sheet.cell_value(i, 4))+1
             yield StringTableRow(int(sheet.cell_value(i, 0)), offset, int(sheet.cell_value(i, 2)),
-                                 encoded_str)
-                                 # str(sheet.cell_value(i, 4)).encode("utf-8"))
+                                 str(sheet.cell_value(i, 4)).encode("utf-8"))
     def build_excel_rows_rus(self, sheet):
         for i in range(0, sheet.nrows):
             yield StringTableRow(int(sheet.cell_value(i, 0)), int(sheet.cell_value(i, 1)), int(sheet.cell_value(i, 2)),
@@ -408,31 +410,3 @@ class HunkfileCodec:
         sheet = wb.sheet_by_index(sheet_id)
         rows = list(self.build_excel_rows(sheet))
         return StringTable(1, 2, sheet.nrows, 28, sheet.nrows * 4 + 28, 0, 178778297, 0, rows)
-
-
-codec = HunkfileCodec("C:\S\steamapps\common\Monster High New Ghoul in School\HUNKFILES\\")
-data = codec.parse("locaclean.hnk")
-# data = codec.parse("Global_en_US.hnk")
-dialog = codec.import_excel("Localisation.xls",0) #dialog
-common = codec.import_excel("Localisation.xls",1) #common
-lc_pc = codec.import_excel("Localisation.xls",2) #lcPC
-lc_common = codec.import_excel("Localisation.xls",3) #lcCommon
-# codec.dump_global_en("Global_en_US.hnk")
-# codec.dump_loca("locaclean.hnk")
-
-# sheet = list(codec.open_csv("dia3.csv"))
-# data = codec.parse("Localisation_en_US5.hnk")
-#
-# dialog = data[6]
-# print(res)
-# total = len(sheet)
-# print("Total lines: " + str(total))
-# b = list(codec.build_stringtable(sheet))
-#
-#
-data[2] = common
-data[6] = dialog
-data[10] = lc_common
-data[14] = lc_pc
-#
-codec.pack(data, "C:\S\steamapps\common\Monster High New Ghoul in School\HUNKFILES\Localisation_en_US_test.hnk")

@@ -128,7 +128,7 @@ class StringTable(NamedTuple):
             sheet1.write(row.id, 1, row.offset)
             sheet1.write(row.id, 2, row.hash)
             sheet1.write(row.id, 3, hex(row.hash))
-            sheet1.write(row.id, 4, row.string.decode("ANSI"))
+            sheet1.write(row.id, 4, row.string.decode("windows-1252", errors="ignore"))
             sheet1.write(row.id, 5, len(row.string))
 
 

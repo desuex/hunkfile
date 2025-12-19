@@ -1,3 +1,6 @@
+# **THIS TOOL IS NO LONGER MAINTAINED**
+Please use this repository:
+https://github.com/desuex/torus-tools
 # hunkfile
 Torus Games data format packer-unpacker. Tested on Monster High NGIS PC game. Make sure you are using correct endianness (ps3 hunkfiles are big endian, pc are little). 
 
